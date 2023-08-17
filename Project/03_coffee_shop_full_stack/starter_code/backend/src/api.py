@@ -111,16 +111,16 @@ def add_drinks(jwt):
 '''
 
 
-@app.route('/drinks/<id>', methods=['PATCH'])
+@app.route('/drinks/<int:id>', methods=['PATCH'])
 @requires_auth('post:drinks')
-def edit_drink(jwt):
+def edit_drink(jwt, id):
     req_body = request.get_json()
     recipe = req_body.get('recipe'),
     title = req_body.get('title')
 
     selected_drink = Drink.query.filter(Drink.id == id).one_or_none()
 
-    if selected_drink is None and selected_drink.title != title:
+    if selected_drink is None or selected_drink.title != title:
         abort(404)
 
     if type(recipe) is dict:
@@ -148,9 +148,9 @@ def edit_drink(jwt):
 '''
 
 
-@app.route('/drinks/<id>', methods=['DELETE'])
+@app.route('/drinks/<int:id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drink(jwt):
+def delete_drink(jwt, id):
     selected_drink = Drink.query.filter(Drink.id == id).one_or_none()
 
     if selected_drink is None:

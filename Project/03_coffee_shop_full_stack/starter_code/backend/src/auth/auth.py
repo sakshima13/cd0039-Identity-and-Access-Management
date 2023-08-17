@@ -1,13 +1,14 @@
 import json
+import os
 from flask import request, _request_ctx_stack, abort
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
 
 
-AUTH0_DOMAIN = 'udacity-fsnd.auth0.com'
+AUTH0_DOMAIN = os.getenv('AUTH0_DOMAIN', 'coffee-shop-udacity01.us.auth0.com')
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'dev'
+API_AUDIENCE = os.getenv('API_AUDIENCE', 'http://127.0.0.1:5000/api/v2')
 
 ## AuthError Exception
 '''
@@ -41,23 +42,24 @@ def get_token_auth_header():
         raise AuthError({
             'code': 'invalid_header',
             'description': 'Auth header must be present'
-        })
-    if 'Bearer' not in auth_header:
+        }, 401)
+    auth_header_content = auth_header.split(' ')
+    if 'Bearer' not in auth_header_content:
         raise AuthError({
             'code': 'invalid_header',
             'description': auth_errors['bearer_error']
-        })
-    elif len(auth_header) == 1:
+        }, 401)
+    elif len(auth_header_content) == 1:
         raise AuthError({
             'code': 'invalid_header',
             'description': auth_errors['token_error']
-        })
-    elif len(auth_header) > 2:
+        }, 401)
+    elif len(auth_header_content) > 2:
         raise AuthError({
             'code': 'invalid_header',
             'description': auth_errors['invalid_error']
-        })
-    return AuthError.split(' ')[1]
+        }, 401)
+    return auth_header_content[1]
 
 '''
 check_permissions(permission, payload) method
@@ -75,7 +77,7 @@ def check_permissions(permission, payload):
         raise AuthError({
             'code': 'unauthorized',
             'description': 'Permission not available'
-        })
+        }, 401)
     return True
 
 '''
@@ -114,13 +116,11 @@ def verify_decode_jwt(token):
     if rsa_key:
         try:
             payload = jwt.decode(
-                token,
-                rsa_key,
+                token=token,
+                key=rsa_key,
                 algorithms=ALGORITHMS,
                 audience=API_AUDIENCE,
-                issuer='https://' + AUTH0_DOMAIN + '/'
             )
-
             return payload
 
         except jwt.ExpiredSignatureError:
